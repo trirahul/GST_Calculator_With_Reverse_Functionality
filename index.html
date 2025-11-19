@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>GST 18% Calculator – Base & Total</title>
+  <title>GST 18% Calculator – Auto Base & Total</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -47,6 +47,11 @@
       box-sizing: border-box;
     }
 
+    input[readonly] {
+      background-color: #f0f0f0;
+      color: #333;
+    }
+
     button {
       width: 100%;
       padding: 12px;
@@ -54,64 +59,24 @@
       border-radius: 8px;
       font-size: 17px;
       cursor: pointer;
-      margin-bottom: 10px;
-    }
-
-    #fromBaseBtn {
-      background-color: #28a745;
-      color: #fff;
-    }
-
-    #fromTotalBtn {
-      background-color: #007bff;
-      color: #fff;
-    }
-
-    #clearBtn {
+      margin-top: 4px;
+      margin-bottom: 6px;
       background-color: #6c757d;
       color: #fff;
     }
 
-    .result-label {
-      font-weight: bold;
-      margin-top: 12px;
-      font-size: 15px;
-    }
-
-    .result-value {
-      font-size: 17px;
-      margin-bottom: 4px;
-    }
-
     .error {
       color: #b00020;
-      font-size: 14px;
-      margin-bottom: 8px;
+      font-size: 13px;
+      margin-bottom: 6px;
       min-height: 18px;
     }
 
     .note {
-      margin-top: 16px;
+      margin-top: 14px;
       font-size: 12px;
       color: #666;
       text-align: center;
-    }
-
-    .btn-row {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 4px;
-      margin-bottom: 8px;
-    }
-
-    @media (min-width: 480px) {
-      .btn-row {
-        flex-direction: row;
-      }
-      .btn-row button {
-        width: 50%;
-      }
     }
   </style>
 </head>
@@ -129,103 +94,121 @@
       <input id="totalInput" type="number" placeholder="e.g. 11800" step="0.01" min="0">
     </div>
 
+    <div class="field-group">
+      <label for="cgstInput">CGST @ 9%</label>
+      <input id="cgstInput" type="number" readonly>
+    </div>
+
+    <div class="field-group">
+      <label for="sgstInput">SGST @ 9%</label>
+      <input id="sgstInput" type="number" readonly>
+    </div>
+
     <div id="error" class="error"></div>
 
-    <div class="btn-row">
-      <button id="fromBaseBtn">Base → Calculate Total + CGST + SGST</button>
-      <button id="fromTotalBtn">Total → Calculate Base + CGST + SGST</button>
-    </div>
     <button id="clearBtn">Clear</button>
 
-    <div class="result-label">Base Amount (Before GST):</div>
-    <div id="baseResult" class="result-value">-</div>
-
-    <div class="result-label">Total Amount (Incl. GST):</div>
-    <div id="totalResult" class="result-value">-</div>
-
-    <div class="result-label">CGST @ 9%:</div>
-    <div id="cgstResult" class="result-value">-</div>
-
-    <div class="result-label">SGST @ 9%:</div>
-    <div id="sgstResult" class="result-value">-</div>
-
     <div class="note">
-      GST rate fixed at 18% (9% CGST + 9% SGST). Values rounded to 2 decimals.
+      Type either Base or Total. Other fields auto-calculate.<br>
+      GST fixed at 18% (9% CGST + 9% SGST). Values rounded to 2 decimals.
     </div>
   </div>
 
   <script>
+    const baseInput  = document.getElementById("baseInput");
+    const totalInput = document.getElementById("totalInput");
+    const cgstInput  = document.getElementById("cgstInput");
+    const sgstInput  = document.getElementById("sgstInput");
+    const errorDiv   = document.getElementById("error");
+    const clearBtn   = document.getElementById("clearBtn");
+
+    let updating = false; // to avoid infinite loop when we set values from code
+
     function round2(n) {
       return Math.round((n + Number.EPSILON) * 100) / 100;
     }
 
-    const baseInput  = document.getElementById("baseInput");
-    const totalInput = document.getElementById("totalInput");
-    const errorDiv   = document.getElementById("error");
-
-    const baseRes  = document.getElementById("baseResult");
-    const totalRes = document.getElementById("totalResult");
-    const cgstRes  = document.getElementById("cgstResult");
-    const sgstRes  = document.getElementById("sgstResult");
-
-    function showResults(base, total, cgst, sgst) {
-      baseRes.textContent  = round2(base).toFixed(2);
-      totalRes.textContent = round2(total).toFixed(2);
-      cgstRes.textContent  = round2(cgst).toFixed(2);
-      sgstRes.textContent  = round2(sgst).toFixed(2);
+    function clearOutputs() {
+      cgstInput.value = "";
+      sgstInput.value = "";
+      errorDiv.textContent = "";
     }
 
-    // Base → Total
-    document.getElementById("fromBaseBtn").onclick = function () {
+    function clearAll() {
+      baseInput.value  = "";
+      totalInput.value = "";
+      cgstInput.value  = "";
+      sgstInput.value  = "";
+      errorDiv.textContent = "";
+    }
+
+    // When user types Base → auto compute Total, CGST, SGST
+    baseInput.addEventListener("input", function () {
+      if (updating) return;
+      updating = true;
+
       const val = parseFloat(baseInput.value);
-      if (!val || val <= 0) {
-        errorDiv.textContent = "Enter a valid Base Amount.";
+      if (!baseInput.value) {
+        totalInput.value = "";
+        clearOutputs();
+        updating = false;
         return;
       }
-      errorDiv.textContent = "";
+      if (isNaN(val) || val < 0) {
+        errorDiv.textContent = "Enter a valid Base amount.";
+        totalInput.value = "";
+        clearOutputs();
+        updating = false;
+        return;
+      }
 
+      errorDiv.textContent = "";
       const base  = val;
       const cgst  = base * 0.09;
       const sgst  = base * 0.09;
-      const total = base + cgst + sgst;  // base * 1.18
+      const total = base + cgst + sgst; // base * 1.18
 
-      // Fill total field also
       totalInput.value = round2(total).toFixed(2);
+      cgstInput.value  = round2(cgst).toFixed(2);
+      sgstInput.value  = round2(sgst).toFixed(2);
 
-      showResults(base, total, cgst, sgst);
-    };
+      updating = false;
+    });
 
-    // Total → Base
-    document.getElementById("fromTotalBtn").onclick = function () {
+    // When user types Total → auto compute Base, CGST, SGST
+    totalInput.addEventListener("input", function () {
+      if (updating) return;
+      updating = true;
+
       const val = parseFloat(totalInput.value);
-      if (!val || val <= 0) {
-        errorDiv.textContent = "Enter a valid Total Amount.";
+      if (!totalInput.value) {
+        baseInput.value = "";
+        clearOutputs();
+        updating = false;
         return;
       }
-      errorDiv.textContent = "";
+      if (isNaN(val) || val < 0) {
+        errorDiv.textContent = "Enter a valid Total amount.";
+        baseInput.value = "";
+        clearOutputs();
+        updating = false;
+        return;
+      }
 
+      errorDiv.textContent = "";
       const total = val;
       const base  = total / 1.18;
       const cgst  = base * 0.09;
       const sgst  = base * 0.09;
 
-      // Fill base field also
       baseInput.value = round2(base).toFixed(2);
+      cgstInput.value = round2(cgst).toFixed(2);
+      sgstInput.value = round2(sgst).toFixed(2);
 
-      showResults(base, total, cgst, sgst);
-    };
+      updating = false;
+    });
 
-    document.getElementById("clearBtn").onclick = function () {
-      baseInput.value  = "";
-      totalInput.value = "";
-      baseRes.textContent  = "-";
-      totalRes.textContent = "-";
-      cgstRes.textContent  = "-";
-      sgstRes.textContent  = "-";
-      errorDiv.textContent = "";
-    };
+    clearBtn.addEventListener("click", clearAll);
   </script>
 </body>
 </html>
-
-
