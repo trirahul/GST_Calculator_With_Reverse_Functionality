@@ -115,18 +115,18 @@
 
     <div class="note">
       Type either Base or Total. Other fields auto-calculate.<br>
-      GST fixed at 18% (9% CGST + 9% SGST). Values rounded to 2 decimals.
+      GST fixed at 18% (9% CGST + 9% SGST). All values use 2 decimal places.
     </div>
   </div>
 
   <script>
-    const baseInput  = document.getElementById("baseInput");
-    const totalInput = document.getElementById("totalInput");
-    const cgstInput  = document.getElementById("cgstInput");
-    const sgstInput  = document.getElementById("sgstInput");
-    const roundOffInput = document.getElementById("roundOffInput");
-    const errorDiv   = document.getElementById("error");
-    const clearBtn   = document.getElementById("clearBtn");
+    const baseInput      = document.getElementById("baseInput");
+    const totalInput     = document.getElementById("totalInput");
+    const cgstInput      = document.getElementById("cgstInput");
+    const sgstInput      = document.getElementById("sgstInput");
+    const roundOffInput  = document.getElementById("roundOffInput");
+    const errorDiv       = document.getElementById("error");
+    const clearBtn       = document.getElementById("clearBtn");
 
     let updating = false;
 
@@ -150,19 +150,37 @@
       errorDiv.textContent = "";
     }
 
-    // Base → Auto Calculate
+    function updateRoundOffFromCurrent() {
+      const base  = parseFloat(baseInput.value);
+      const total = parseFloat(totalInput.value);
+      const cgst  = parseFloat(cgstInput.value);
+      const sgst  = parseFloat(sgstInput.value);
+
+      if (isNaN(base) || isNaN(total) || isNaN(cgst) || isNaN(sgst)) {
+        roundOffInput.value = "";
+        return;
+      }
+
+      // Round Off = Total - Base - CGST - SGST (all at 2 decimals)
+      const roundOff = round2(total - base - cgst - sgst);
+      roundOffInput.value = roundOff.toFixed(2);
+    }
+
+    // Base → Auto Calculate Total, CGST, SGST, Round Off
     baseInput.addEventListener("input", function () {
       if (updating) return;
       updating = true;
 
-      const val = parseFloat(baseInput.value);
+      const raw = parseFloat(baseInput.value);
+
       if (!baseInput.value) {
         totalInput.value = "";
         clearOutputs();
         updating = false;
         return;
       }
-      if (isNaN(val) || val < 0) {
+
+      if (isNaN(raw) || raw < 0) {
         errorDiv.textContent = "Enter a valid Base amount.";
         totalInput.value = "";
         clearOutputs();
@@ -171,34 +189,37 @@
       }
 
       errorDiv.textContent = "";
-      const base  = val;
-      const cgst  = base * 0.09;
-      const sgst  = base * 0.09;
-      const totalUnrounded = base + cgst + sgst;
-      const totalRounded   = round2(totalUnrounded);
 
-      totalInput.value = totalRounded.toFixed(2);
-      cgstInput.value  = round2(cgst).toFixed(2);
-      sgstInput.value  = round2(sgst).toFixed(2);
+      // Use raw for math, then round to 2 decimals for display
+      const base  = round2(raw);
+      const cgst  = round2(raw * 0.09);
+      const sgst  = round2(raw * 0.09);
+      const total = round2(base + cgst + sgst);
 
-      roundOffInput.value = round2(totalRounded - totalUnrounded).toFixed(2);
+      baseInput.value  = base.toFixed(2);
+      totalInput.value = total.toFixed(2);
+      cgstInput.value  = cgst.toFixed(2);
+      sgstInput.value  = sgst.toFixed(2);
 
+      updateRoundOffFromCurrent();
       updating = false;
     });
 
-    // Total → Auto Calculate
+    // Total → Auto Calculate Base, CGST, SGST, Round Off
     totalInput.addEventListener("input", function () {
       if (updating) return;
       updating = true;
 
-      const val = parseFloat(totalInput.value);
+      const raw = parseFloat(totalInput.value);
+
       if (!totalInput.value) {
         baseInput.value = "";
         clearOutputs();
         updating = false;
         return;
       }
-      if (isNaN(val) || val < 0) {
+
+      if (isNaN(raw) || raw < 0) {
         errorDiv.textContent = "Enter a valid Total amount.";
         baseInput.value = "";
         clearOutputs();
@@ -207,20 +228,20 @@
       }
 
       errorDiv.textContent = "";
-      const total = val;
-      const baseRaw = total / 1.18;
-      const cgst = baseRaw * 0.09;
-      const sgst = baseRaw * 0.09;
 
-      const baseRounded = round2(baseRaw);
-      const totalUnrounded = baseRaw + cgst + sgst;
+      // Use raw total for math
+      const total = round2(raw);
+      const baseRaw = raw / 1.18;
+      const base = round2(baseRaw);
+      const cgst = round2(baseRaw * 0.09);
+      const sgst = round2(baseRaw * 0.09);
 
-      baseInput.value = baseRounded.toFixed(2);
-      cgstInput.value = round2(cgst).toFixed(2);
-      sgstInput.value = round2(sgst).toFixed(2);
+      totalInput.value = total.toFixed(2);
+      baseInput.value  = base.toFixed(2);
+      cgstInput.value  = cgst.toFixed(2);
+      sgstInput.value  = sgst.toFixed(2);
 
-      roundOffInput.value = round2(total - totalUnrounded).toFixed(2);
-
+      updateRoundOffFromCurrent();
       updating = false;
     });
 
