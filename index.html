@@ -104,6 +104,11 @@
       <input id="sgstInput" type="number" readonly>
     </div>
 
+    <div class="field-group">
+      <label for="roundOffInput">Round Off</label>
+      <input id="roundOffInput" type="number" readonly>
+    </div>
+
     <div id="error" class="error"></div>
 
     <button id="clearBtn">Clear</button>
@@ -119,10 +124,11 @@
     const totalInput = document.getElementById("totalInput");
     const cgstInput  = document.getElementById("cgstInput");
     const sgstInput  = document.getElementById("sgstInput");
+    const roundOffInput = document.getElementById("roundOffInput");
     const errorDiv   = document.getElementById("error");
     const clearBtn   = document.getElementById("clearBtn");
 
-    let updating = false; // to avoid infinite loop when we set values from code
+    let updating = false;
 
     function round2(n) {
       return Math.round((n + Number.EPSILON) * 100) / 100;
@@ -131,6 +137,7 @@
     function clearOutputs() {
       cgstInput.value = "";
       sgstInput.value = "";
+      roundOffInput.value = "";
       errorDiv.textContent = "";
     }
 
@@ -139,10 +146,11 @@
       totalInput.value = "";
       cgstInput.value  = "";
       sgstInput.value  = "";
+      roundOffInput.value = "";
       errorDiv.textContent = "";
     }
 
-    // When user types Base → auto compute Total, CGST, SGST
+    // Base → Auto Calculate
     baseInput.addEventListener("input", function () {
       if (updating) return;
       updating = true;
@@ -166,16 +174,19 @@
       const base  = val;
       const cgst  = base * 0.09;
       const sgst  = base * 0.09;
-      const total = base + cgst + sgst; // base * 1.18
+      const totalUnrounded = base + cgst + sgst;
+      const totalRounded   = round2(totalUnrounded);
 
-      totalInput.value = round2(total).toFixed(2);
+      totalInput.value = totalRounded.toFixed(2);
       cgstInput.value  = round2(cgst).toFixed(2);
       sgstInput.value  = round2(sgst).toFixed(2);
+
+      roundOffInput.value = round2(totalRounded - totalUnrounded).toFixed(2);
 
       updating = false;
     });
 
-    // When user types Total → auto compute Base, CGST, SGST
+    // Total → Auto Calculate
     totalInput.addEventListener("input", function () {
       if (updating) return;
       updating = true;
@@ -197,13 +208,18 @@
 
       errorDiv.textContent = "";
       const total = val;
-      const base  = total / 1.18;
-      const cgst  = base * 0.09;
-      const sgst  = base * 0.09;
+      const baseRaw = total / 1.18;
+      const cgst = baseRaw * 0.09;
+      const sgst = baseRaw * 0.09;
 
-      baseInput.value = round2(base).toFixed(2);
+      const baseRounded = round2(baseRaw);
+      const totalUnrounded = baseRaw + cgst + sgst;
+
+      baseInput.value = baseRounded.toFixed(2);
       cgstInput.value = round2(cgst).toFixed(2);
       sgstInput.value = round2(sgst).toFixed(2);
+
+      roundOffInput.value = round2(total - totalUnrounded).toFixed(2);
 
       updating = false;
     });
