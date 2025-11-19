@@ -13,7 +13,7 @@
     h1 { font-size:22px; text-align:center; margin-bottom:18px; }
     .field-group { margin-bottom:14px; }
     label { font-weight:bold; font-size:15px; margin-bottom:6px; display:block; }
-    input[type="number"] {
+    input {
       width:100%; padding:12px; border-radius:8px; border:1px solid #aaa;
       font-size:17px; box-sizing:border-box;
     }
@@ -31,99 +31,136 @@
 
     <div class="field-group">
       <label>Base Amount (Before GST)</label>
-      <input id="baseInput" type="number" placeholder="e.g. 10000" step="0.01">
+      <input id="baseInput" type="text" inputmode="decimal" placeholder="e.g. 10000">
     </div>
 
     <div class="field-group">
       <label>Total Amount (Incl. 18% GST)</label>
-      <input id="totalInput" type="number" placeholder="e.g. 11800" step="0.01">
+      <input id="totalInput" type="text" inputmode="decimal" placeholder="e.g. 11800">
     </div>
 
     <div class="field-group">
       <label>CGST @ 9%</label>
-      <input id="cgstInput" type="number" readonly>
+      <input id="cgstInput" type="text" readonly>
     </div>
 
     <div class="field-group">
       <label>SGST @ 9%</label>
-      <input id="sgstInput" type="number" readonly>
+      <input id="sgstInput" type="text" readonly>
     </div>
 
     <div class="field-group">
       <label>Round Off</label>
-      <input id="roundOffInput" type="number" readonly>
+      <input id="roundOffInput" type="text" readonly>
     </div>
 
     <button id="clearBtn">Clear</button>
 
-    <div class="note">Type either Base or Total. Other values auto-calc.</div>
+    <div class="note">
+      Type either Base or Total. Other values auto-calculate.<br>
+      GST fixed at 18% (9% CGST + 9% SGST). 2-decimal calculations.
+    </div>
   </div>
 
   <script>
-    const baseInput = document.getElementById("baseInput");
-    const totalInput = document.getElementById("totalInput");
-    const cgstInput = document.getElementById("cgstInput");
-    const sgstInput = document.getElementById("sgstInput");
-    const roundInput = document.getElementById("roundOffInput");
-    const clearBtn = document.getElementById("clearBtn");
+    const baseInput   = document.getElementById("baseInput");
+    const totalInput  = document.getElementById("totalInput");
+    const cgstInput   = document.getElementById("cgstInput");
+    const sgstInput   = document.getElementById("sgstInput");
+    const roundInput  = document.getElementById("roundOffInput");
+    const clearBtn    = document.getElementById("clearBtn");
 
     let updating = false;
 
-    function r2(n){ return Math.round((n+Number.EPSILON)*100)/100; }
+    function r2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
+
+    function parseVal(str) {
+      if (!str) return NaN;
+      // replace comma with dot just in case
+      return parseFloat(str.replace(",", "."));
+    }
+
+    function clearOutputs() {
+      cgstInput.value  = "";
+      sgstInput.value  = "";
+      roundInput.value = "";
+    }
 
     function updateFromBase(){
-      if(updating) return;
+      if (updating) return;
       updating = true;
 
-      let base = parseFloat(baseInput.value);
-      if(isNaN(base)){ cgstInput.value = ""; sgstInput.value = ""; roundInput.value=""; totalInput.value=""; updating=false; return; }
+      const base = parseVal(baseInput.value);
+      if (isNaN(base)) {
+        // user clearing / typing junk → don't fight
+        totalInput.value = totalInput.value; // no change
+        clearOutputs();
+        updating = false;
+        return;
+      }
 
-      let cgst = r2(base * 0.09);
-      let sgst = r2(base * 0.09);
-      let total = r2(base + cgst + sgst);
+      const cgst = r2(base * 0.09);
+      const sgst = r2(base * 0.09);
+      const total = r2(base + cgst + sgst);
 
-      totalInput.value = total;
-      cgstInput.value = cgst;
-      sgstInput.value = sgst;
+      // we DO NOT touch baseInput, only outputs & other field
+      totalInput.value = total.toFixed(2);
+      cgstInput.value  = cgst.toFixed(2);
+      sgstInput.value  = sgst.toFixed(2);
 
-      let roundOff = r2(total - base - cgst - sgst);
-      roundInput.value = roundOff;
+      const roundOff = r2(total - base - cgst - sgst);
+      roundInput.value = roundOff.toFixed(2);
 
       updating = false;
     }
 
     function updateFromTotal(){
-      if(updating) return;
+      if (updating) return;
       updating = true;
 
-      let total = parseFloat(totalInput.value);
-      if(isNaN(total)){ baseInput.value=""; cgstInput.value=""; sgstInput.value=""; roundInput.value=""; updating=false; return; }
+      const total = parseVal(totalInput.value);
+      if (isNaN(total)) {
+        baseInput.value = baseInput.value; // no change
+        clearOutputs();
+        updating = false;
+        return;
+      }
 
-      let baseRaw = total / 1.18;
-      let base = r2(baseRaw);
-      let cgst = r2(baseRaw * 0.09);
-      let sgst = r2(baseRaw * 0.09);
+      const baseRaw = total / 1.18;
+      const base = r2(baseRaw);
+      const cgst = r2(baseRaw * 0.09);
+      const sgst = r2(baseRaw * 0.09);
 
-      baseInput.value = base;
-      cgstInput.value = cgst;
-      sgstInput.value = sgst;
+      // we DO NOT touch totalInput, only outputs & other field
+      baseInput.value  = base.toFixed(2);
+      cgstInput.value  = cgst.toFixed(2);
+      sgstInput.value  = sgst.toFixed(2);
 
-      let roundOff = r2(total - base - cgst - sgst);
-      roundInput.value = roundOff;
+      const roundOff = r2(total - base - cgst - sgst);
+      roundInput.value = roundOff.toFixed(2);
 
       updating = false;
     }
 
-    baseInput.addEventListener("input", updateFromBase);
-    totalInput.addEventListener("input", updateFromTotal);
+    baseInput.addEventListener("input", function(){
+      if (document.activeElement === baseInput) {
+        // ignore loop from totalInput changes
+        updateFromBase();
+      }
+    });
+
+    totalInput.addEventListener("input", function(){
+      if (document.activeElement === totalInput) {
+        updateFromTotal();
+      }
+    });
 
     clearBtn.onclick = function(){
-      baseInput.value = "";
+      baseInput.value  = "";
       totalInput.value = "";
-      cgstInput.value = "";
-      sgstInput.value = "";
-      roundInput.value = "";
-    }
+      clearOutputs();
+    };
   </script>
 </body>
 </html>
+
