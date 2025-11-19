@@ -5,79 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>GST 18% Calculator – Auto Base & Total</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f7f7f7;
-    }
-
+    body { font-family: Arial, sans-serif; background:#f7f7f7; margin:0; padding:0; }
     .container {
-      max-width: 480px;
-      margin: 20px auto;
-      background: #fff;
-      padding: 20px 18px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      max-width:480px; margin:20px auto; background:#fff; padding:20px 18px;
+      border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1);
     }
-
-    h1 {
-      font-size: 22px;
-      text-align: center;
-      margin-bottom: 18px;
-    }
-
-    .field-group {
-      margin-bottom: 14px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: bold;
-      font-size: 15px;
-    }
-
+    h1 { font-size:22px; text-align:center; margin-bottom:18px; }
+    .field-group { margin-bottom:14px; }
+    label { font-weight:bold; font-size:15px; margin-bottom:6px; display:block; }
     input[type="number"] {
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #aaa;
-      font-size: 17px;
-      box-sizing: border-box;
+      width:100%; padding:12px; border-radius:8px; border:1px solid #aaa;
+      font-size:17px; box-sizing:border-box;
     }
-
-    input[readonly] {
-      background-color: #f0f0f0;
-      color: #333;
-    }
-
+    input[readonly] { background:#f0f0f0; color:#333; }
     button {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      font-size: 17px;
-      cursor: pointer;
-      margin-top: 4px;
-      margin-bottom: 6px;
-      background-color: #6c757d;
-      color: #fff;
+      width:100%; padding:12px; font-size:17px; border:none;
+      border-radius:8px; margin-top:6px; background:#6c757d; color:#fff;
     }
-
-    .error {
-      color: #b00020;
-      font-size: 13px;
-      margin-bottom: 6px;
-      min-height: 18px;
-    }
-
-    .note {
-      margin-top: 14px;
-      font-size: 12px;
-      color: #666;
-      text-align: center;
-    }
+    .note { margin-top:14px; text-align:center; font-size:12px; color:#666; }
   </style>
 </head>
 <body>
@@ -85,167 +30,100 @@
     <h1>GST 18% Split Calculator</h1>
 
     <div class="field-group">
-      <label for="baseInput">Base Amount (Before GST)</label>
-      <input id="baseInput" type="number" placeholder="e.g. 10000" step="0.01" min="0">
+      <label>Base Amount (Before GST)</label>
+      <input id="baseInput" type="number" placeholder="e.g. 10000" step="0.01">
     </div>
 
     <div class="field-group">
-      <label for="totalInput">Total Amount (Incl. 18% GST)</label>
-      <input id="totalInput" type="number" placeholder="e.g. 11800" step="0.01" min="0">
+      <label>Total Amount (Incl. 18% GST)</label>
+      <input id="totalInput" type="number" placeholder="e.g. 11800" step="0.01">
     </div>
 
     <div class="field-group">
-      <label for="cgstInput">CGST @ 9%</label>
+      <label>CGST @ 9%</label>
       <input id="cgstInput" type="number" readonly>
     </div>
 
     <div class="field-group">
-      <label for="sgstInput">SGST @ 9%</label>
+      <label>SGST @ 9%</label>
       <input id="sgstInput" type="number" readonly>
     </div>
 
     <div class="field-group">
-      <label for="roundOffInput">Round Off</label>
+      <label>Round Off</label>
       <input id="roundOffInput" type="number" readonly>
     </div>
 
-    <div id="error" class="error"></div>
-
     <button id="clearBtn">Clear</button>
 
-    <div class="note">
-      Type either Base or Total. Other fields auto-calculate.<br>
-      GST fixed at 18% (9% CGST + 9% SGST). All values use 2 decimal places.
-    </div>
+    <div class="note">Type either Base or Total. Other values auto-calc.</div>
   </div>
 
   <script>
-    const baseInput      = document.getElementById("baseInput");
-    const totalInput     = document.getElementById("totalInput");
-    const cgstInput      = document.getElementById("cgstInput");
-    const sgstInput      = document.getElementById("sgstInput");
-    const roundOffInput  = document.getElementById("roundOffInput");
-    const errorDiv       = document.getElementById("error");
-    const clearBtn       = document.getElementById("clearBtn");
+    const baseInput = document.getElementById("baseInput");
+    const totalInput = document.getElementById("totalInput");
+    const cgstInput = document.getElementById("cgstInput");
+    const sgstInput = document.getElementById("sgstInput");
+    const roundInput = document.getElementById("roundOffInput");
+    const clearBtn = document.getElementById("clearBtn");
 
     let updating = false;
 
-    function round2(n) {
-      return Math.round((n + Number.EPSILON) * 100) / 100;
+    function r2(n){ return Math.round((n+Number.EPSILON)*100)/100; }
+
+    function updateFromBase(){
+      if(updating) return;
+      updating = true;
+
+      let base = parseFloat(baseInput.value);
+      if(isNaN(base)){ cgstInput.value = ""; sgstInput.value = ""; roundInput.value=""; totalInput.value=""; updating=false; return; }
+
+      let cgst = r2(base * 0.09);
+      let sgst = r2(base * 0.09);
+      let total = r2(base + cgst + sgst);
+
+      totalInput.value = total;
+      cgstInput.value = cgst;
+      sgstInput.value = sgst;
+
+      let roundOff = r2(total - base - cgst - sgst);
+      roundInput.value = roundOff;
+
+      updating = false;
     }
 
-    function clearOutputs() {
+    function updateFromTotal(){
+      if(updating) return;
+      updating = true;
+
+      let total = parseFloat(totalInput.value);
+      if(isNaN(total)){ baseInput.value=""; cgstInput.value=""; sgstInput.value=""; roundInput.value=""; updating=false; return; }
+
+      let baseRaw = total / 1.18;
+      let base = r2(baseRaw);
+      let cgst = r2(baseRaw * 0.09);
+      let sgst = r2(baseRaw * 0.09);
+
+      baseInput.value = base;
+      cgstInput.value = cgst;
+      sgstInput.value = sgst;
+
+      let roundOff = r2(total - base - cgst - sgst);
+      roundInput.value = roundOff;
+
+      updating = false;
+    }
+
+    baseInput.addEventListener("input", updateFromBase);
+    totalInput.addEventListener("input", updateFromTotal);
+
+    clearBtn.onclick = function(){
+      baseInput.value = "";
+      totalInput.value = "";
       cgstInput.value = "";
       sgstInput.value = "";
-      roundOffInput.value = "";
-      errorDiv.textContent = "";
+      roundInput.value = "";
     }
-
-    function clearAll() {
-      baseInput.value  = "";
-      totalInput.value = "";
-      cgstInput.value  = "";
-      sgstInput.value  = "";
-      roundOffInput.value = "";
-      errorDiv.textContent = "";
-    }
-
-    function updateRoundOffFromCurrent() {
-      const base  = parseFloat(baseInput.value);
-      const total = parseFloat(totalInput.value);
-      const cgst  = parseFloat(cgstInput.value);
-      const sgst  = parseFloat(sgstInput.value);
-
-      if (isNaN(base) || isNaN(total) || isNaN(cgst) || isNaN(sgst)) {
-        roundOffInput.value = "";
-        return;
-      }
-
-      // Round Off = Total - Base - CGST - SGST (all at 2 decimals)
-      const roundOff = round2(total - base - cgst - sgst);
-      roundOffInput.value = roundOff.toFixed(2);
-    }
-
-    // Base → Auto Calculate Total, CGST, SGST, Round Off
-    baseInput.addEventListener("input", function () {
-      if (updating) return;
-      updating = true;
-
-      const raw = parseFloat(baseInput.value);
-
-      if (!baseInput.value) {
-        totalInput.value = "";
-        clearOutputs();
-        updating = false;
-        return;
-      }
-
-      if (isNaN(raw) || raw < 0) {
-        errorDiv.textContent = "Enter a valid Base amount.";
-        totalInput.value = "";
-        clearOutputs();
-        updating = false;
-        return;
-      }
-
-      errorDiv.textContent = "";
-
-      // Use raw for math, then round to 2 decimals for display
-      const base  = round2(raw);
-      const cgst  = round2(raw * 0.09);
-      const sgst  = round2(raw * 0.09);
-      const total = round2(base + cgst + sgst);
-
-      baseInput.value  = base.toFixed(2);
-      totalInput.value = total.toFixed(2);
-      cgstInput.value  = cgst.toFixed(2);
-      sgstInput.value  = sgst.toFixed(2);
-
-      updateRoundOffFromCurrent();
-      updating = false;
-    });
-
-    // Total → Auto Calculate Base, CGST, SGST, Round Off
-    totalInput.addEventListener("input", function () {
-      if (updating) return;
-      updating = true;
-
-      const raw = parseFloat(totalInput.value);
-
-      if (!totalInput.value) {
-        baseInput.value = "";
-        clearOutputs();
-        updating = false;
-        return;
-      }
-
-      if (isNaN(raw) || raw < 0) {
-        errorDiv.textContent = "Enter a valid Total amount.";
-        baseInput.value = "";
-        clearOutputs();
-        updating = false;
-        return;
-      }
-
-      errorDiv.textContent = "";
-
-      // Use raw total for math
-      const total = round2(raw);
-      const baseRaw = raw / 1.18;
-      const base = round2(baseRaw);
-      const cgst = round2(baseRaw * 0.09);
-      const sgst = round2(baseRaw * 0.09);
-
-      totalInput.value = total.toFixed(2);
-      baseInput.value  = base.toFixed(2);
-      cgstInput.value  = cgst.toFixed(2);
-      sgstInput.value  = sgst.toFixed(2);
-
-      updateRoundOffFromCurrent();
-      updating = false;
-    });
-
-    clearBtn.addEventListener("click", clearAll);
   </script>
 </body>
 </html>
