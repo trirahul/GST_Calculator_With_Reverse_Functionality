@@ -2,86 +2,106 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>GST 18% Calculator (Base + CGST 9% + SGST 9%)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>GST 18% Calculator (Responsive)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
+      margin: 0;
+      padding: 0;
+      background: #f7f7f7;
     }
+
     .container {
-      max-width: 400px;
-      margin: 0 auto;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 16px 20px 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      max-width: 480px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px 18px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
+
     h1 {
-      font-size: 20px;
+      font-size: 22px;
       text-align: center;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
+
     label {
       display: block;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       font-weight: bold;
+      font-size: 16px;
     }
+
     input[type="number"] {
       width: 100%;
-      padding: 8px;
-      margin-bottom: 12px;
-      box-sizing: border-box;
-      border-radius: 4px;
+      padding: 14px;
+      margin-bottom: 14px;
+      border-radius: 8px;
       border: 1px solid #aaa;
-      font-size: 14px;
+      font-size: 18px;
+      box-sizing: border-box;
     }
+
     button {
       width: 100%;
-      padding: 10px;
+      padding: 14px;
       border: none;
-      border-radius: 4px;
-      font-size: 16px;
+      border-radius: 8px;
+      font-size: 18px;
       cursor: pointer;
+      margin-bottom: 12px;
     }
-    button#calcBtn {
+
+    #calcBtn {
       background-color: #007bff;
       color: #fff;
-      margin-bottom: 8px;
     }
-    button#clearBtn {
+
+    #clearBtn {
       background-color: #6c757d;
       color: #fff;
     }
+
     .result-label {
       font-weight: bold;
-      margin-top: 10px;
+      margin-top: 14px;
+      font-size: 16px;
     }
+
     .result-value {
-      margin-bottom: 4px;
-      padding: 4px 0;
+      font-size: 18px;
+      margin-bottom: 6px;
     }
-    .note {
-      font-size: 11px;
-      color: #555;
-      margin-top: 10px;
-    }
+
     .error {
       color: #b00020;
-      font-size: 12px;
+      font-size: 14px;
       margin-bottom: 8px;
+    }
+
+    .note {
+      margin-top: 16px;
+      font-size: 12px;
+      color: #666;
+      text-align: center;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>GST 18% Split Calculator</h1>
-    <label for="total">Total Amount (Incl. 18% GST)</label>
-    <input type="number" id="total" placeholder="e.g. 7999" step="0.01" min="0">
+
+    <label>Total Amount (Incl. GST)</label>
+    <input id="total" type="number" placeholder="e.g. 7999" step="0.01">
+
     <div id="error" class="error"></div>
+
     <button id="calcBtn">Calculate Base + CGST + SGST</button>
     <button id="clearBtn">Clear</button>
 
-    <div class="result-label">Base Amount (Before GST):</div>
+    <div class="result-label">Base Amount:</div>
     <div id="base" class="result-value">-</div>
 
     <div class="result-label">CGST @ 9%:</div>
@@ -90,50 +110,42 @@
     <div class="result-label">SGST @ 9%:</div>
     <div id="sgst" class="result-value">-</div>
 
-    <div class="note">
-      This tool assumes total amount includes 18% GST (9% CGST + 9% SGST).
-      Calculations are rounded to 2 decimal places.
-    </div>
+    <div class="note">Values rounded to 2 decimals. GST = 18% (9% + 9%).</div>
   </div>
 
   <script>
-    function round2(num) {
-      return Math.round((num + Number.EPSILON) * 100) / 100;
+    function round2(n) {
+      return Math.round((n + Number.EPSILON) * 100) / 100;
     }
 
-    document.getElementById('calcBtn').addEventListener('click', function () {
-      var totalInput = document.getElementById('total').value.trim();
-      var errorDiv = document.getElementById('error');
-      errorDiv.textContent = '';
+    document.getElementById("calcBtn").onclick = function () {
+      let total = parseFloat(document.getElementById("total").value);
+      let error = document.getElementById("error");
 
-      if (!totalInput) {
-        errorDiv.textContent = 'Please enter total amount (including GST).';
+      if (!total || total <= 0) {
+        error.textContent = "Please enter a valid amount.";
         return;
       }
 
-      var total = parseFloat(totalInput);
-      if (isNaN(total) || total < 0) {
-        errorDiv.textContent = 'Invalid amount. Enter a valid positive number.';
-        return;
-      }
+      error.textContent = "";
 
-      var base = total / 1.18;      // 18% GST
-      var cgst = base * 0.09;       // 9% CGST
-      var sgst = base * 0.09;       // 9% SGST
+      let base = total / 1.18;
+      let cgst = base * 0.09;
+      let sgst = base * 0.09;
 
-      document.getElementById('base').textContent = round2(base).toFixed(2);
-      document.getElementById('cgst').textContent = round2(cgst).toFixed(2);
-      document.getElementById('sgst').textContent = round2(sgst).toFixed(2);
-    });
+      document.getElementById("base").textContent = round2(base).toFixed(2);
+      document.getElementById("cgst").textContent = round2(cgst).toFixed(2);
+      document.getElementById("sgst").textContent = round2(sgst).toFixed(2);
+    };
 
-    document.getElementById('clearBtn').addEventListener('click', function () {
-      document.getElementById('total').value = '';
-      document.getElementById('base').textContent = '-';
-      document.getElementById('cgst').textContent = '-';
-      document.getElementById('sgst').textContent = '-';
-      document.getElementById('error').textContent = '';
-      document.getElementById('total').focus();
-    });
+    document.getElementById("clearBtn").onclick = function () {
+      document.getElementById("total").value = "";
+      document.getElementById("base").textContent = "-";
+      document.getElementById("cgst").textContent = "-";
+      document.getElementById("sgst").textContent = "-";
+      document.getElementById("error").textContent = "";
+    };
   </script>
 </body>
 </html>
+
