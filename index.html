@@ -53,7 +53,7 @@
       <input id="roundOffInput" type="text" readonly>
     </div>
 
-    <!-- TOTAL FIELD SHIFTED TO LAST -->
+    <!-- TOTAL FIELD LAST -->
     <div class="field-group">
       <label>Total Amount (Incl. 18% GST)</label>
       <input id="totalInput" type="text" inputmode="decimal" placeholder="e.g. 11800">
@@ -90,14 +90,25 @@
       roundInput.value = "";
     }
 
+    // BASE → all
     function updateFromBase(){
       if (updating) return;
       updating = true;
 
-      const base = parseVal(baseInput.value);
-      if (isNaN(base)) {
+      const rawStr = baseInput.value;
+      const trimmed = rawStr.trim();
+
+      // If user actually cleared the field -> clear everything
+      if (trimmed === "") {
+        totalInput.value = "";
         clearOutputs();
-        totalInput.value = totalInput.value;
+        updating = false;
+        return;
+      }
+
+      const base = parseVal(trimmed);
+      // If half-typed / invalid, DON'T touch anything
+      if (isNaN(base)) {
         updating = false;
         return;
       }
@@ -106,6 +117,7 @@
       const sgst = r2(base * 0.09);
       const total = r2(base + cgst + sgst);
 
+      // Only update dependent fields, not the one user is typing in
       totalInput.value = total.toFixed(2);
       cgstInput.value  = cgst.toFixed(2);
       sgstInput.value  = sgst.toFixed(2);
@@ -116,14 +128,23 @@
       updating = false;
     }
 
+    // TOTAL → all
     function updateFromTotal(){
       if (updating) return;
       updating = true;
 
-      const total = parseVal(totalInput.value);
-      if (isNaN(total)) {
+      const rawStr = totalInput.value;
+      const trimmed = rawStr.trim();
+
+      if (trimmed === "") {
+        baseInput.value = "";
         clearOutputs();
-        baseInput.value = baseInput.value;
+        updating = false;
+        return;
+      }
+
+      const total = parseVal(trimmed);
+      if (isNaN(total)) {
         updating = false;
         return;
       }
