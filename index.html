@@ -29,29 +29,34 @@
   <div class="container">
     <h1>GST 18% Split Calculator</h1>
 
+    <!-- BASE FIELD FIRST -->
     <div class="field-group">
       <label>Base Amount (Before GST)</label>
       <input id="baseInput" type="text" inputmode="decimal" placeholder="e.g. 10000">
     </div>
 
-    <div class="field-group">
-      <label>Total Amount (Incl. 18% GST)</label>
-      <input id="totalInput" type="text" inputmode="decimal" placeholder="e.g. 11800">
-    </div>
-
+    <!-- CGST FIELD -->
     <div class="field-group">
       <label>CGST @ 9%</label>
       <input id="cgstInput" type="text" readonly>
     </div>
 
+    <!-- SGST FIELD -->
     <div class="field-group">
       <label>SGST @ 9%</label>
       <input id="sgstInput" type="text" readonly>
     </div>
 
+    <!-- ROUND OFF FIELD -->
     <div class="field-group">
       <label>Round Off</label>
       <input id="roundOffInput" type="text" readonly>
+    </div>
+
+    <!-- TOTAL FIELD SHIFTED TO LAST -->
+    <div class="field-group">
+      <label>Total Amount (Incl. 18% GST)</label>
+      <input id="totalInput" type="text" inputmode="decimal" placeholder="e.g. 11800">
     </div>
 
     <button id="clearBtn">Clear</button>
@@ -76,7 +81,6 @@
 
     function parseVal(str) {
       if (!str) return NaN;
-      // replace comma with dot just in case
       return parseFloat(str.replace(",", "."));
     }
 
@@ -92,9 +96,8 @@
 
       const base = parseVal(baseInput.value);
       if (isNaN(base)) {
-        // user clearing / typing junk → don't fight
-        totalInput.value = totalInput.value; // no change
         clearOutputs();
+        totalInput.value = totalInput.value;
         updating = false;
         return;
       }
@@ -103,7 +106,6 @@
       const sgst = r2(base * 0.09);
       const total = r2(base + cgst + sgst);
 
-      // we DO NOT touch baseInput, only outputs & other field
       totalInput.value = total.toFixed(2);
       cgstInput.value  = cgst.toFixed(2);
       sgstInput.value  = sgst.toFixed(2);
@@ -120,8 +122,8 @@
 
       const total = parseVal(totalInput.value);
       if (isNaN(total)) {
-        baseInput.value = baseInput.value; // no change
         clearOutputs();
+        baseInput.value = baseInput.value;
         updating = false;
         return;
       }
@@ -131,7 +133,6 @@
       const cgst = r2(baseRaw * 0.09);
       const sgst = r2(baseRaw * 0.09);
 
-      // we DO NOT touch totalInput, only outputs & other field
       baseInput.value  = base.toFixed(2);
       cgstInput.value  = cgst.toFixed(2);
       sgstInput.value  = sgst.toFixed(2);
@@ -143,16 +144,11 @@
     }
 
     baseInput.addEventListener("input", function(){
-      if (document.activeElement === baseInput) {
-        // ignore loop from totalInput changes
-        updateFromBase();
-      }
+      if (document.activeElement === baseInput) updateFromBase();
     });
 
     totalInput.addEventListener("input", function(){
-      if (document.activeElement === totalInput) {
-        updateFromTotal();
-      }
+      if (document.activeElement === totalInput) updateFromTotal();
     });
 
     clearBtn.onclick = function(){
@@ -163,4 +159,3 @@
   </script>
 </body>
 </html>
-
